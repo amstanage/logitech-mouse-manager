@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logitech Mouse Manager</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Logitech Mouse Manager</h1>
+      <p class="subtitle">WebHID-powered mouse configuration</p>
+    </header>
+
+    <div id="connect-section" class="section connect-section">
+      <button id="connect-btn" class="btn btn-primary">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a8 8 0 0 0-8 8v4a8 8 0 0 0 16 0v-4a8 8 0 0 0-8-8z"/>
+          <line x1="12" y1="2" x2="12" y2="10"/>
+        </svg>
+        Connect Mouse
+      </button>
+      <p class="hint">Click to pair your Logitech mouse via WebHID</p>
+      <p class="browser-warning" id="browser-warning" style="display:none;">
+        Your browser does not support WebHID. Please use Chrome, Edge, or Opera.
+      </p>
+
+      <div class="supported-mice">
+        <h2>Supported Mice</h2>
+        <p class="supported-desc">Any Logitech mouse using HID++ 2.0 over a USB receiver. Tested and confirmed models:</p>
+        <div class="mice-grid">
+          <div class="mouse-card">
+            <span class="mouse-name">G Pro X Superlight</span>
+            <span class="mouse-features">DPI, Polling Rate, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">G Pro X Superlight 2</span>
+            <span class="mouse-features">DPI, Polling Rate, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">G Pro Wireless</span>
+            <span class="mouse-features">DPI, Polling Rate, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">G502 X Lightspeed</span>
+            <span class="mouse-features">DPI, Polling Rate, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">G502 Lightspeed</span>
+            <span class="mouse-features">DPI, Polling Rate, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">G703 Lightspeed</span>
+            <span class="mouse-features">DPI, Polling Rate, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">G305 / G304</span>
+            <span class="mouse-features">DPI, Polling Rate, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">G603</span>
+            <span class="mouse-features">DPI, Polling Rate, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">G903 Lightspeed</span>
+            <span class="mouse-features">DPI, Polling Rate, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">G403 Wireless</span>
+            <span class="mouse-features">DPI, Polling Rate, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">MX Master 3 / 3S</span>
+            <span class="mouse-features">DPI, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">MX Anywhere 3 / 3S</span>
+            <span class="mouse-features">DPI, Battery</span>
+          </div>
+          <div class="mouse-card">
+            <span class="mouse-name">Superstrike X2</span>
+            <span class="mouse-features">Battery</span>
+          </div>
+        </div>
+        <p class="supported-note">Other Logitech HID++ 2.0 mice may also work. Features vary by model.</p>
+      </div>
+    </div>
+
+    <div id="dashboard" class="dashboard" style="display:none;">
+      <div class="device-info">
+        <div class="device-name" id="device-name">Unknown Device</div>
+        <div class="device-status">
+          <span class="status-dot"></span>
+          Connected
+        </div>
+        <button id="disconnect-btn" class="btn btn-small btn-outline">Disconnect</button>
+      </div>
+
+      <div class="cards">
+        <!-- Battery Card -->
+        <div class="card">
+          <h2>Battery</h2>
+          <div class="battery-display">
+            <div class="battery-icon">
+              <div class="battery-body">
+                <div class="battery-fill" id="battery-fill"></div>
+              </div>
+              <div class="battery-tip"></div>
+            </div>
+            <div class="battery-info">
+              <span class="battery-percent" id="battery-percent">--%</span>
+              <span class="battery-status" id="battery-status">Unknown</span>
+            </div>
+          </div>
+          <button class="btn btn-small" id="refresh-battery-btn">Refresh</button>
+        </div>
+
+        <!-- DPI Card -->
+        <div class="card">
+          <h2>DPI Settings</h2>
+          <div class="dpi-display">
+            <span class="dpi-value" id="dpi-value">--</span>
+            <span class="dpi-label">DPI (current)</span>
+          </div>
+          <div class="dpi-input-group">
+            <input type="number" id="dpi-input" min="100" max="32000" step="50" value="800" disabled>
+          </div>
+          <div class="preset-buttons">
+            <button class="btn btn-small btn-preset" data-dpi="400">400</button>
+            <button class="btn btn-small btn-preset" data-dpi="800">800</button>
+            <button class="btn btn-small btn-preset" data-dpi="1600">1600</button>
+            <button class="btn btn-small btn-preset" data-dpi="3200">3200</button>
+          </div>
+          <button class="btn btn-primary btn-small" id="apply-dpi-btn" disabled>Apply DPI</button>
+        </div>
+
+        <!-- Polling Rate Card -->
+        <div class="card">
+          <h2>Polling Rate</h2>
+          <div class="polling-display">
+            <span class="polling-value" id="polling-value">--</span>
+            <span class="polling-label">Hz</span>
+          </div>
+          <div class="radio-group" id="polling-options">
+            <label class="radio-option">
+              <input type="radio" name="polling" value="125" disabled> 125 Hz (8ms)
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="polling" value="250" disabled> 250 Hz (4ms)
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="polling" value="500" disabled> 500 Hz (2ms)
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="polling" value="1000" disabled> 1000 Hz (1ms)
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="polling" value="2000" disabled> 2000 Hz (0.5ms)
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="polling" value="4000" disabled> 4000 Hz (0.25ms)
+            </label>
+          </div>
+          <button class="btn btn-primary btn-small" id="apply-polling-btn" disabled>Apply Polling Rate</button>
+        </div>
+      </div>
+
+      <!-- Log -->
+      <div class="card log-card" id="log-card" style="display:none;">
+        <h2>Communication Log</h2>
+        <div class="log" id="log"></div>
+        <button class="btn btn-small btn-outline" id="clear-log-btn">Clear Log</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="hidpp.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
