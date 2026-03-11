@@ -119,50 +119,54 @@
         <!-- DPI Card -->
         <div class="card">
           <h2>DPI Settings</h2>
-          <div class="dpi-display">
-            <span class="dpi-value" id="dpi-value">--</span>
-            <span class="dpi-label">DPI (current)</span>
+          <div class="card-content">
+            <div class="dpi-display">
+              <span class="dpi-value" id="dpi-value">--</span>
+              <span class="dpi-label">DPI (current)</span>
+            </div>
+            <div class="dpi-input-group">
+              <input type="number" id="dpi-input" min="100" max="32000" step="50" value="800" disabled>
+            </div>
+            <div class="preset-buttons">
+              <button class="btn btn-small btn-preset" data-dpi="400">400</button>
+              <button class="btn btn-small btn-preset" data-dpi="800">800</button>
+              <button class="btn btn-small btn-preset" data-dpi="1600">1600</button>
+              <button class="btn btn-small btn-preset" data-dpi="3200">3200</button>
+            </div>
+            <button class="btn btn-primary btn-small" id="apply-dpi-btn" disabled>Apply DPI</button>
           </div>
-          <div class="dpi-input-group">
-            <input type="number" id="dpi-input" min="100" max="32000" step="50" value="800" disabled>
-          </div>
-          <div class="preset-buttons">
-            <button class="btn btn-small btn-preset" data-dpi="400">400</button>
-            <button class="btn btn-small btn-preset" data-dpi="800">800</button>
-            <button class="btn btn-small btn-preset" data-dpi="1600">1600</button>
-            <button class="btn btn-small btn-preset" data-dpi="3200">3200</button>
-          </div>
-          <button class="btn btn-primary btn-small" id="apply-dpi-btn" disabled>Apply DPI</button>
         </div>
 
         <!-- Polling Rate Card -->
         <div class="card">
           <h2>Polling Rate</h2>
-          <div class="polling-display">
-            <span class="polling-value" id="polling-value">--</span>
-            <span class="polling-label">Hz</span>
+          <div class="card-content">
+            <div class="polling-display">
+              <span class="polling-value" id="polling-value">--</span>
+              <span class="polling-label">Hz</span>
+            </div>
+            <div class="radio-group" id="polling-options">
+              <label class="radio-option">
+                <input type="radio" name="polling" value="125" disabled> 125 Hz (8ms)
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="polling" value="250" disabled> 250 Hz (4ms)
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="polling" value="500" disabled> 500 Hz (2ms)
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="polling" value="1000" disabled> 1000 Hz (1ms)
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="polling" value="2000" disabled> 2000 Hz (0.5ms)
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="polling" value="4000" disabled> 4000 Hz (0.25ms)
+              </label>
+            </div>
+            <button class="btn btn-primary btn-small" id="apply-polling-btn" disabled>Apply Polling Rate</button>
           </div>
-          <div class="radio-group" id="polling-options">
-            <label class="radio-option">
-              <input type="radio" name="polling" value="125" disabled> 125 Hz (8ms)
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="polling" value="250" disabled> 250 Hz (4ms)
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="polling" value="500" disabled> 500 Hz (2ms)
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="polling" value="1000" disabled> 1000 Hz (1ms)
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="polling" value="2000" disabled> 2000 Hz (0.5ms)
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="polling" value="4000" disabled> 4000 Hz (0.25ms)
-            </label>
-          </div>
-          <button class="btn btn-primary btn-small" id="apply-polling-btn" disabled>Apply Polling Rate</button>
         </div>
       </div>
 

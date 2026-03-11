@@ -1,8 +1,3 @@
-/**
- * Logitech HID++ Protocol Implementation
- * Supports HID++ 2.0 for mouse configuration via WebHID.
- */
-
 const LOGITECH_VENDOR_ID = 0x046d;
 
 const HIDPP_SHORT = 0x10;
@@ -31,6 +26,7 @@ class HidPPDevice {
     this._pendingRequests = new Map();
     this._requestId = 0;
     this._onLog = null;
+    this._deviceName = null;
   }
 
   set onLog(fn) { this._onLog = fn; }
@@ -51,7 +47,6 @@ class HidPPDevice {
     });
     if (selected.length === 0) throw new Error('No device selected');
 
-    // Find the HID++ interface among all granted devices
     const allDevices = await navigator.hid.getDevices();
     const logitechDevices = allDevices.filter(d => d.vendorId === LOGITECH_VENDOR_ID);
     this._log('info', `Found ${logitechDevices.length} Logitech HID interface(s)`);
@@ -87,6 +82,7 @@ class HidPPDevice {
     await this._detectDeviceIndex();
     await this._detectProtocol();
     await this._discoverFeatures();
+    await this._readDeviceName();
     return true;
   }
 
@@ -107,6 +103,25 @@ class HidPPDevice {
     this._log('info', 'Defaulting to index 0x01');
   }
 
+  async _readDeviceName() {
+    const feat = this.featureIndex[FEATURES.DEVICE_NAME];
+    if (!feat) return;
+    try {
+      const countResp = await this._request(feat, 0x00, []);
+      const nameLen = countResp[0];
+      let name = '';
+      for (let offset = 0; offset < nameLen; offset += 16) {
+        const resp = await this._request(feat, 0x01, [offset]);
+        const chunk = resp.slice(0, Math.min(16, nameLen - offset));
+        name += String.fromCharCode(...chunk.filter(c => c > 0));
+      }
+      this._deviceName = name.trim();
+      this._log('info', `Device name: ${this._deviceName}`);
+    } catch (err) {
+      this._log('info', `Could not read device name: ${err.message}`);
+    }
+  }
+
   async disconnect() {
     if (this.device?.opened) {
       await this.device.close();
@@ -115,9 +130,11 @@ class HidPPDevice {
     this.device = null;
     this.featureIndex = {};
     this.protocolVersion = null;
+    this._rateFuncs = null;
+    this._deviceName = null;
   }
 
-  get productName() { return this.device?.productName || 'Unknown Device'; }
+  get productName() { return this._deviceName || this.device?.productName || 'Unknown Device'; }
   get isConnected() { return this.device?.opened === true; }
 
   async _detectProtocol() {
@@ -161,7 +178,6 @@ class HidPPDevice {
 
   async getBattery() {
     if (this.featureIndex[FEATURES.UNIFIED_BATTERY]) {
-      // funcId 0x01 = get_status (0x00 is get_capabilities, not battery level)
       const resp = await this._request(this.featureIndex[FEATURES.UNIFIED_BATTERY], 0x01, []);
       const statusNames = ['Discharging', 'Charging', 'Wireless Charging', 'Fully Charged'];
       return { percent: resp[0], status: statusNames[resp[2]] || 'Unknown' };
@@ -186,34 +202,17 @@ class HidPPDevice {
     const feat = this.featureIndex[FEATURES.ADJUSTABLE_DPI];
     if (!feat) throw new Error('DPI not supported');
 
-    // getSensorDPI: funcId=1, param=sensorIdx
     const resp = await this._request(feat, 0x01, [0x00]);
     this._log('info', `DPI READ raw: [${this._hex(resp)}]`);
 
-    // Try all possible parse offsets to find valid DPI
-    const candidates = [];
-    for (let i = 0; i + 1 < resp.length; i++) {
-      const val = (resp[i] << 8) | resp[i + 1];
-      if (val >= 100 && val <= 32000) {
-        candidates.push({ offset: i, dpi: val });
-      }
-    }
-    this._log('info', `DPI candidates: ${candidates.map(c => `[${c.offset}]=${c.dpi}`).join(', ')}`);
-
-    // Standard parse: sensorIdx at [0], DPI at [1..2]
     const standardDpi = (resp[1] << 8) | resp[2];
-    // Alt parse: DPI at [0..1] (no sensorIdx echo)
     const altDpi = (resp[0] << 8) | resp[1];
-
-    // Pick whichever gives a reasonable gaming DPI (prefer standard)
     let currentDpi = standardDpi;
     if (standardDpi < 100 || standardDpi > 32000) {
       currentDpi = altDpi;
     }
-
     this._log('info', `DPI parsed: standard=${standardDpi}, alt=${altDpi}, using=${currentDpi}`);
 
-    // getDPIList: funcId=2
     let dpiMin = 100, dpiMax = 32000, dpiStep = 50;
     try {
       const listResp = await this._request(feat, 0x02, [0x00]);
@@ -251,7 +250,6 @@ class HidPPDevice {
     const msb = (dpi >> 8) & 0xff;
     const lsb = dpi & 0xff;
 
-    // setSensorDPI: funcId=3
     const setResp = await this._request(feat, 0x03, [0x00, msb, lsb]);
     this._log('info', `DPI SET response raw: [${this._hex(setResp)}]`);
 
@@ -259,16 +257,10 @@ class HidPPDevice {
   }
 
   // ===== Polling Rate =====
-  //
-  // Instead of guessing function IDs, we auto-probe at connect time.
-  // We try calling each funcId 0-3 and check which one returns a valid
-  // rate code (1-7) in resp[0]. That's the getRate function.
-  // The rate list function is getRate+1, and set is getRate+2.
 
-  _rateFuncs = null; // { featIdx, funcGet, funcList, funcSet }
+  _rateFuncs = null;
 
   _rateCodeToHz(code) {
-    // Rate codes are the polling interval in ms (powers of 2)
     return { 1: 1000, 2: 500, 4: 250, 8: 125 }[code] || 0;
   }
 
@@ -277,7 +269,6 @@ class HidPPDevice {
   }
 
   _parseRateFlags(flags) {
-    // Flag bits use ascending Hz order (different from rate codes)
     const rates = [];
     if (flags & 0x01) rates.push(125);
     if (flags & 0x02) rates.push(250);
@@ -290,16 +281,6 @@ class HidPPDevice {
   }
 
   async _probeRateFunctions() {
-    // 0x8061 (Extended Report Rate) has an extra getDeviceCapabilities at func 0:
-    //   func 0 = getDeviceCapabilities
-    //   func 1 = getReportRateList
-    //   func 2 = getReportRate
-    //   func 3 = setReportRate
-    //
-    // 0x8060 (Report Rate) layout:
-    //   func 0 = getReportRateList
-    //   func 1 = getReportRate
-    //   func 2 = setReportRate
     if (this.featureIndex[FEATURES.EXTENDED_REPORT_RATE]) {
       const featIdx = this.featureIndex[FEATURES.EXTENDED_REPORT_RATE];
       this._log('info', `RATE: using ExtReportRate idx ${featIdx} (list=func1, get=func2, set=func3)`);
@@ -321,19 +302,16 @@ class HidPPDevice {
 
     const { featIdx, funcGet, funcList } = this._rateFuncs;
 
-    // Get current rate
     const resp = await this._request(featIdx, funcGet, []);
     this._log('info', `RATE READ (func=${funcGet}): [${this._hex(resp.slice(0, 4))}]`);
     const currentHz = this._rateCodeToHz(resp[0]);
     this._log('info', `RATE current: code=${resp[0]} -> ${currentHz}Hz`);
 
-    // Get supported rate list
     let supported = [];
     try {
       const listResp = await this._request(featIdx, funcList, []);
       this._log('info', `RATE LIST (func=${funcList}): [${this._hex(listResp.slice(0, 6))}]`);
 
-      // Scan first 4 bytes for the flags byte (most set bits = most rates)
       let bestFlags = 0;
       let bestCount = 0;
       for (let i = 0; i < Math.min(listResp.length, 4); i++) {
@@ -352,8 +330,6 @@ class HidPPDevice {
 
     if (supported.length === 0) supported = [125, 250, 500, 1000];
 
-    // Force-enable standard rates that are between reported rates
-    // (some devices don't advertise all rates they actually support)
     const stdRates = [125, 250, 500, 1000];
     if (supported.length > 0) {
       const minRate = Math.min(...supported);
@@ -388,7 +364,6 @@ class HidPPDevice {
     const resp = await this._request(featIdx, funcSet, [code]);
     this._log('info', `RATE SET response: [${this._hex(resp.slice(0, 4))}]`);
 
-    // Read back
     const rb = await this._request(featIdx, funcGet, []);
     const actualHz = this._rateCodeToHz(rb[0]);
     this._log('info', `RATE readback: code=${rb[0]} -> ${actualHz}Hz`);
@@ -437,8 +412,6 @@ class HidPPDevice {
   _onInputReport(event) {
     const { reportId, data } = event;
 
-    // Read bytes from DataView using getUint8 - guaranteed correct regardless
-    // of underlying ArrayBuffer offset. No Uint8Array buffer tricks.
     const len = data.byteLength;
     const bytes = [];
     for (let i = 0; i < len; i++) {
@@ -452,7 +425,6 @@ class HidPPDevice {
 
     const subId = bytes[1];
 
-    // HID++ 2.0 error
     if (subId === 0xff && len >= 5) {
       const errSwId = bytes[3] & 0x0f;
       const errCode = bytes[4];
@@ -471,7 +443,6 @@ class HidPPDevice {
       return;
     }
 
-    // HID++ 1.0 error
     if (subId === 0x8f && len >= 5) {
       this._log('error', `HID++ 1.0 error: ${bytes[4]}`);
       for (const [swId, p] of this._pendingRequests) {
@@ -483,7 +454,6 @@ class HidPPDevice {
       return;
     }
 
-    // Normal response
     const swId = bytes[2] & 0x0f;
     const payload = bytes.slice(3);
 

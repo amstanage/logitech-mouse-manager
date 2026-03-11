@@ -27,6 +27,7 @@ if (!navigator.hid) {
 
 // Logging
 mouse.onLog = (type, msg) => {
+  if (type === 'send' || type === 'receive') return;
   const entry = document.createElement('div');
   entry.className = `log-entry ${type}`;
   const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -125,6 +126,20 @@ refreshBatteryBtn.addEventListener('click', loadBattery);
 
 // ===== DPI =====
 
+function showWIP(card) {
+  const content = card.querySelector('.card-content');
+  if (content) content.style.display = 'none';
+  const existing = card.querySelector('.wip-overlay');
+  if (existing) return;
+  const wip = document.createElement('div');
+  wip.className = 'wip-overlay';
+  wip.innerHTML = `
+    <span class="wip-label">Work in Progress</span>
+    <div class="wip-bar"><div class="wip-bar-fill"></div></div>
+  `;
+  card.appendChild(wip);
+}
+
 async function loadDPI() {
   try {
     const dpi = await mouse.getDPI();
@@ -135,7 +150,7 @@ async function loadDPI() {
     dpiInput.step = dpi.step;
   } catch (err) {
     log('error', `DPI: ${err.message}`);
-    dpiValue.textContent = 'N/A';
+    showWIP(dpiValue.closest('.card'));
   }
 }
 
@@ -180,12 +195,12 @@ async function loadPollingRate() {
       const val = parseInt(radio.value);
       const isSupported = rate.supported.includes(val);
       radio.disabled = !isSupported;
-      radio.closest('.radio-option').style.opacity = isSupported ? '1' : '0.3';
+      radio.closest('.radio-option').style.display = isSupported ? '' : 'none';
       if (val === rate.current) radio.checked = true;
     });
   } catch (err) {
     log('error', `Polling rate: ${err.message}`);
-    pollingValue.textContent = 'N/A';
+    showWIP(pollingValue.closest('.card'));
   }
 }
 

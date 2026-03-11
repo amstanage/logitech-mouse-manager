@@ -441,6 +441,46 @@ input[type="radio"] {
   color: var(--warning);
 }
 
+/* Work in Progress */
+.wip-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  gap: 1rem;
+}
+
+.wip-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wip-bar {
+  width: 80%;
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.wip-bar-fill {
+  width: 40%;
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  animation: wip-slide 1.8s ease-in-out infinite;
+}
+
+@keyframes wip-slide {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(150%); }
+  100% { transform: translateX(-100%); }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .cards {
