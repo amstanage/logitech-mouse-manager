@@ -42,13 +42,25 @@ class HidPPDevice {
   async connect() {
     if (!navigator.hid) throw new Error('WebHID API not available');
 
-    const selected = await navigator.hid.requestDevice({
-      filters: [{ vendorId: LOGITECH_VENDOR_ID }],
-    });
-    if (selected.length === 0) throw new Error('No device selected');
+    const paired = (await navigator.hid.getDevices())
+      .filter(d => d.vendorId === LOGITECH_VENDOR_ID);
 
-    const allDevices = await navigator.hid.getDevices();
-    const logitechDevices = allDevices.filter(d => d.vendorId === LOGITECH_VENDOR_ID);
+    let logitechDevices;
+    const hidppPaired = paired.filter(d =>
+      d.collections?.some(c => c.outputReports?.some(r => r.reportId === HIDPP_LONG))
+    );
+
+    if (hidppPaired.length === 1) {
+      logitechDevices = paired;
+      this._log('info', 'Auto-connecting to previously paired receiver');
+    } else {
+      const selected = await navigator.hid.requestDevice({
+        filters: [{ vendorId: LOGITECH_VENDOR_ID }],
+      });
+      if (selected.length === 0) throw new Error('No device selected');
+      logitechDevices = (await navigator.hid.getDevices())
+        .filter(d => d.vendorId === LOGITECH_VENDOR_ID);
+    }
     this._log('info', `Found ${logitechDevices.length} Logitech HID interface(s)`);
 
     let hidppDevice = null;
@@ -67,7 +79,8 @@ class HidPPDevice {
       }
     }
 
-    this.device = hidppDevice || selected[0];
+    this.device = hidppDevice || logitechDevices[0];
+    if (!this.device) throw new Error('No compatible HID++ device found');
     if (!this.device.opened) await this.device.open();
 
     for (const col of this.device.collections || []) {
