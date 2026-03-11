@@ -25,6 +25,12 @@ if (!navigator.hid) {
   browserWarning.style.display = 'block';
 }
 
+function getUnsupportedFeatures(deviceName) {
+  const name = (deviceName || '').toUpperCase();
+  if (name.includes('SUPERSTRIKE')) return ['dpi', 'polling'];
+  return [];
+}
+
 // Logging
 mouse.onLog = (type, msg) => {
   if (type === 'send' || type === 'receive') return;
@@ -58,10 +64,19 @@ connectBtn.addEventListener('click', async () => {
     dashboard.style.display = 'block';
     enableControls(true);
 
-    // Load sequentially - HID++ is single-channel
+    const unsupported = getUnsupportedFeatures(mouse.productName);
+
     await loadBattery();
-    await loadDPI();
-    await loadPollingRate();
+    if (unsupported.includes('dpi')) {
+      showWIP(dpiValue.closest('.card'));
+    } else {
+      await loadDPI();
+    }
+    if (unsupported.includes('polling')) {
+      showWIP(pollingValue.closest('.card'));
+    } else {
+      await loadPollingRate();
+    }
     startBatteryAutoRefresh();
   } catch (err) {
     log('error', `Connection failed: ${err.message}`);

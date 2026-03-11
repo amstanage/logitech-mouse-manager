@@ -330,11 +330,13 @@ class HidPPDevice {
 
     if (supported.length === 0) supported = [125, 250, 500, 1000];
 
-    const stdRates = [125, 250, 500, 1000];
+    const knownRates = [125, 250, 500, 1000];
+    supported = supported.filter(r => knownRates.includes(r));
+
     if (supported.length > 0) {
       const minRate = Math.min(...supported);
       const maxRate = Math.max(...supported);
-      for (const r of stdRates) {
+      for (const r of knownRates) {
         if (r >= minRate && r <= maxRate && !supported.includes(r)) {
           supported.push(r);
         }
