@@ -7,7 +7,9 @@ A web-based configuration tool for Logitech mice using the WebHID API and HID++ 
 - **Battery Monitoring** — Real-time battery percentage and charging status with auto-refresh
 - **DPI Control** — Read and set mouse DPI with preset buttons (400, 800, 1600, 3200)
 - **Polling Rate Management** — Switch between 125Hz, 250Hz, 500Hz, and 1000Hz
-- **Communication Log** — Debug HID++ protocol messages (toggle with `~`)
+- **Communication Log** — Debug HID++ protocol messages (toggle with `` ` `` or `~`)
+- **Auto-Connect** — Automatically reconnects to a previously paired receiver without the device picker
+- **Per-Device Feature Detection** — Unsupported features show a "Work in Progress" indicator
 
 ## Supported Mice
 
@@ -34,8 +36,9 @@ Other HID++ 2.0 mice may also work. Features vary by model.
 ## Usage
 
 1. Open `index.html` in Chrome, Edge, or Opera (WebHID required)
-2. Click **Connect Mouse** and select your Logitech USB receiver
+2. Click **Connect Mouse** — if a receiver was previously paired, it connects automatically; otherwise, select your Logitech USB receiver from the picker
 3. Configure DPI, polling rate, and monitor battery
+4. Press `` ` `` or `~` to toggle the communication log for debugging
 
 ## Browser Requirements
 
